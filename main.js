@@ -1,12 +1,14 @@
 // main.js
-import { renderAsciiFrame } from './asciiRenderer.js';
-import { readAllParams, makeInterpolator } from './uiControls.js';
+console.log('ASCII app main module loaded');
+import { renderAsciiFrame } from './AsciiRender.js';
+import { readAllParams, makeInterpolator } from './UIControls.js';
 import { AnimationEngine } from './animationEngine.js';
 import { exportAsGif, exportAsWebM } from './exporter.js';
 
 // DOM
 const uploadEl = document.getElementById('upload');
 const dropZone = document.getElementById('dropZone');
+const fileStatus = document.getElementById('fileStatus');
 const generateBtn = document.getElementById('generateBtn');
 const playBtn = document.getElementById('playBtn');
 const exportGifBtn = document.getElementById('exportGifBtn');
@@ -39,17 +41,31 @@ dropZone.addEventListener('drop', async (e) => {
   e.preventDefault(); dropZone.classList.remove('drag');
   const file = e.dataTransfer.files[0];
   if (file) {
-    currentImage = await loadImageFile(file);
-    // auto-generate a quick preview single frame
-    await singleRenderPreview(currentImage);
+    console.log('Drop received file:', file.name, file.type, file.size);
+    if (fileStatus) fileStatus.textContent = `Loaded: ${file.name}`;
+    try {
+      currentImage = await loadImageFile(file);
+      // auto-generate a quick preview single frame
+      await singleRenderPreview(currentImage);
+    } catch (err) {
+      console.error('Failed loading dropped file:', err);
+      if (fileStatus) fileStatus.textContent = `Failed to load: ${file.name}`;
+    }
   }
 });
 
 uploadEl.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  currentImage = await loadImageFile(file);
-  await singleRenderPreview(currentImage);
+  console.log('File selected via input:', file.name, file.type, file.size);
+  if (fileStatus) fileStatus.textContent = `Loaded: ${file.name}`;
+  try {
+    currentImage = await loadImageFile(file);
+    await singleRenderPreview(currentImage);
+  } catch (err) {
+    console.error('Failed loading selected file:', err);
+    if (fileStatus) fileStatus.textContent = `Failed to load: ${file.name}`;
+  }
 });
 
 // Single-frame preview using current UI values (start state)
