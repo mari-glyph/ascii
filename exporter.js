@@ -8,8 +8,8 @@ function renderAsciiToCanvas(ascii, options = {}) {
   const {
     fontSize = 6,
     fontFamily = 'Courier New, monospace',
-    textColor = '#00ff00',
-    bgColor = '#0a0a0a',
+    textColor = options.textColor || '#00ff00',
+    bgColor = options.bgColor || '#0a0a0a',
     padding = 10
   } = options;
 

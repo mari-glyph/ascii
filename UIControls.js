@@ -12,61 +12,58 @@ export function readParamPair(prefix) {
   };
 }
 
-export function readSelectPair(name) {
-  const s = document.getElementById(`start_${name}`);
-  const e = document.getElementById(`end_${name}`);
-  return { start: s?.value, end: e?.value };
+export function readSingleParam(id) {
+  const el = document.getElementById(id);
+  return el?.value ?? '';
 }
 
 // Read whole parameter set from UI
 export function readAllParams() {
-  const asciiWidth = readParamPair('asciiWidth');
+  // Single values (same for start/end)
+  const asciiWidth = parseInt(readSingleParam('asciiWidth'), 10) || 200;
+  const edge = readSingleParam('edge') || 'none';
+  const charset = readSingleParam('charset') || 'detailed';
+
+  // Animated values (start/end pairs)
   const brightness = readParamPair('brightness');
   const contrast = readParamPair('contrast');
-  const zoom = readParamPair('zoom');
-  const edge = readSelectPair('edge');
-  const charset = readSelectPair('charset');
 
   const frames = parseInt(document.getElementById('numFrames').value, 10) || 30;
   const fps = parseInt(document.getElementById('fps').value, 10) || 12;
+
+  // Color settings
+  const bgColor = readSingleParam('bgColor') || '#0a0a0a';
+  const fgColor = readSingleParam('fgColor') || '#00ff00';
 
   return {
     asciiWidth,
     brightness,
     contrast,
-    zoom,
     edge,
     charset,
     frames,
-    fps
+    fps,
+    bgColor,
+    fgColor
   };
 }
 
-// Given param pair that might be non-numeric (like charset), produce a
-// function that returns interpolated value for frame t in [0,1].
-// For discrete params like charset/edge, we will snap at 0.5 threshold.
+// Given param set, produce a function that returns interpolated value for frame t in [0,1].
 export function makeInterpolator(paramSet) {
-  // paramSet has shapes: e.g. brightness: {start, end}, charset: {start, end}
   return function interp(frameIdx, totalFrames) {
     const t = totalFrames <= 1 ? 0 : frameIdx / (totalFrames - 1);
     function lerp(a, b) { return a + (b - a) * t; }
-    // Numeric
-    const asciiWidthVal = Math.round(lerp(paramSet.asciiWidth.start, paramSet.asciiWidth.end));
+
+    // Numeric animated values
     const brightnessVal = lerp(paramSet.brightness.start, paramSet.brightness.end);
     const contrastVal = lerp(paramSet.contrast.start, paramSet.contrast.end);
-    const zoomVal = lerp(paramSet.zoom.start, paramSet.zoom.end);
-
-    // Discrete: choose start or end based on t threshold. You can change strategy here.
-    const charsetVal = t < 0.5 ? paramSet.charset.start : paramSet.charset.end;
-    const edgeVal = t < 0.5 ? paramSet.edge.start : paramSet.edge.end;
 
     return {
-      asciiWidth: asciiWidthVal,
+      asciiWidth: paramSet.asciiWidth,
       brightness: brightnessVal,
       contrast: contrastVal,
-      zoomPercent: zoomVal,
-      charset: charsetVal,
-      edgeMethod: edgeVal
+      charset: paramSet.charset,
+      edgeMethod: paramSet.edge
     };
   };
 }

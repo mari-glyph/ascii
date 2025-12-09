@@ -21,39 +21,16 @@
       </section>
 
       <section class="control-group">
-        <h3>Render Settings (Start / End)</h3>
+        <h3>Render Settings</h3>
+
         <div class="param-row">
           <label>ASCII Width</label>
-          <input type="number" id="start_asciiWidth" value="200" min="20" max="600">
-          <input type="number" id="end_asciiWidth" value="200" min="20" max="600">
+          <input type="number" id="asciiWidth" value="200" min="20" max="600">
         </div>
 
         <div class="param-row">
-          <label>Brightness</label>
-          <input type="range" id="start_brightness" min="-200" max="200" value="0">
-          <input type="range" id="end_brightness" min="-200" max="200" value="50">
-        </div>
-
-        <div class="param-row">
-          <label>Contrast</label>
-          <input type="range" id="start_contrast" min="-255" max="255" value="0">
-          <input type="range" id="end_contrast" min="-255" max="255" value="50">
-        </div>
-
-        <div class="param-row">
-          <label>Zoom (%)</label>
-          <input type="range" id="start_zoom" min="20" max="600" value="100">
-          <input type="range" id="end_zoom" min="20" max="600" value="130">
-        </div>
-
-        <div class="param-row">
-          <label>Edge (none/sobel/dog)</label>
-          <select id="start_edge">
-            <option value="none">none</option>
-            <option value="sobel">sobel</option>
-            <option value="dog">dog</option>
-          </select>
-          <select id="end_edge">
+          <label>Edge</label>
+          <select id="edge">
             <option value="none">none</option>
             <option value="sobel">sobel</option>
             <option value="dog">dog</option>
@@ -62,15 +39,7 @@
 
         <div class="param-row">
           <label>Charset</label>
-          <select id="start_charset">
-            <option value="detailed">detailed</option>
-            <option value="standard">standard</option>
-            <option value="blocks">blocks</option>
-            <option value="binary">binary</option>
-            <option value="hex">hex</option>
-            <option value="manual">manual</option>
-          </select>
-          <select id="end_charset">
+          <select id="charset">
             <option value="detailed">detailed</option>
             <option value="standard">standard</option>
             <option value="blocks">blocks</option>
@@ -79,35 +48,82 @@
             <option value="manual">manual</option>
           </select>
         </div>
+      </section>
 
-        <div class="param-row small">
+      <section class="control-group">
+        <h3>Animation (Start / End)</h3>
+
+        <div class="param-row slider-row">
+          <label id="brightness-label">Brightness</label>
+          <div class="slider-pair">
+            <div class="slider-container">
+              <input type="range" id="start_brightness" min="-200" max="200" value="0" aria-labelledby="brightness-label" title="Start brightness">
+              <span class="slider-value" id="start_brightness_val">0</span>
+            </div>
+            <div class="slider-container">
+              <input type="range" id="end_brightness" min="-200" max="200" value="50" aria-labelledby="brightness-label" title="End brightness">
+              <span class="slider-value" id="end_brightness_val">50</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="param-row slider-row">
+          <label id="contrast-label">Contrast</label>
+          <div class="slider-pair">
+            <div class="slider-container">
+              <input type="range" id="start_contrast" min="-255" max="255" value="0" aria-labelledby="contrast-label" title="Start contrast">
+              <span class="slider-value" id="start_contrast_val">0</span>
+            </div>
+            <div class="slider-container">
+              <input type="range" id="end_contrast" min="-255" max="255" value="50" aria-labelledby="contrast-label" title="End contrast">
+              <span class="slider-value" id="end_contrast_val">50</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="param-row">
           <label>Frames</label>
           <input type="number" id="numFrames" min="2" max="300" value="30">
         </div>
 
-        <div class="param-row small">
+        <div class="param-row">
           <label>FPS</label>
           <input type="number" id="fps" min="1" max="60" value="12">
         </div>
-
-        <div class="param-row">
-          <button id="generateBtn">Generate Preview</button>
-          <button id="playBtn">Play/Pause</button>
-        </div>
-
       </section>
 
       <section class="control-group">
-        <h3>Export</h3>
+        <h3>Display</h3>
+
         <div class="param-row">
+          <label>Mode</label>
+          <div class="toggle-group">
+            <button type="button" id="modeTerminal" class="toggle-btn active">Terminal</button>
+            <button type="button" id="modePrint" class="toggle-btn">Print</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <label>Background</label>
+          <input type="color" id="bgColor" value="#0a0a0a">
+        </div>
+
+        <div class="param-row">
+          <label>Foreground</label>
+          <input type="color" id="fgColor" value="#00ff00">
+        </div>
+      </section>
+
+      <section class="control-group">
+        <h3>Actions</h3>
+        <div class="button-row">
+          <button id="generateBtn">Generate</button>
+          <button id="playBtn">Play</button>
+        </div>
+        <div class="button-row">
           <button id="exportGifBtn">Export GIF</button>
           <button id="exportWebmBtn">Export WebM</button>
         </div>
-        <p class="hint">WebM can be converted to MP4 using <code>ffmpeg</code> locally (see README).</p>
-      </section>
-
-      <section class="control-group">
-        <h3>Preview Controls</h3>
         <div id="progressWrap"><progress id="renderProgress" value="0" max="100"></progress></div>
       </section>
 
@@ -116,7 +132,24 @@
     <main class="main-content">
       <div class="preview-area">
         <canvas id="previewCanvas"></canvas>
-        <pre id="asciiOutput" aria-hidden="true"></pre>
+        <!-- Dual preview (start/end) -->
+        <div id="dualPreview" class="preview-container">
+          <div class="preview-panel">
+            <div class="preview-label">Start Frame</div>
+            <pre id="asciiOutputStart" class="ascii-preview"></pre>
+          </div>
+          <div class="preview-panel">
+            <div class="preview-label">End Frame</div>
+            <pre id="asciiOutputEnd" class="ascii-preview"></pre>
+          </div>
+        </div>
+        <!-- Single animation preview -->
+        <div id="animationPreview" class="preview-container single hidden">
+          <div class="preview-panel full">
+            <div class="preview-label">Animation Preview</div>
+            <pre id="asciiOutputAnim" class="ascii-preview"></pre>
+          </div>
+        </div>
       </div>
     </main>
   </div>

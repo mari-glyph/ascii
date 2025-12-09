@@ -14,11 +14,32 @@ const playBtn = document.getElementById('playBtn');
 const exportGifBtn = document.getElementById('exportGifBtn');
 const exportWebmBtn = document.getElementById('exportWebmBtn');
 const previewCanvas = document.getElementById('previewCanvas');
-const asciiOutput = document.getElementById('asciiOutput');
+const asciiOutputStart = document.getElementById('asciiOutputStart');
+const asciiOutputEnd = document.getElementById('asciiOutputEnd');
 const progressEl = document.getElementById('renderProgress');
+
+// Display settings
+const modeTerminal = document.getElementById('modeTerminal');
+const modePrint = document.getElementById('modePrint');
+const bgColorInput = document.getElementById('bgColor');
+const fgColorInput = document.getElementById('fgColor');
+
+// Sliders for live updates
+const sliders = [
+  { id: 'start_brightness', valId: 'start_brightness_val' },
+  { id: 'end_brightness', valId: 'end_brightness_val' },
+  { id: 'start_contrast', valId: 'start_contrast_val' },
+  { id: 'end_contrast', valId: 'end_contrast_val' }
+];
+
+// View containers
+const dualPreview = document.getElementById('dualPreview');
+const animationPreview = document.getElementById('animationPreview');
+const asciiOutputAnim = document.getElementById('asciiOutputAnim');
 
 let currentImage = null;
 let engine = null;
+let isAnimationView = false;
 
 // Small helper to create ImageBitmap from file for better performance
 async function loadImageFile(file) {
@@ -34,6 +55,106 @@ async function loadImageFile(file) {
   return img;
 }
 
+// Update slider fill effect and value display
+function updateSliderFill(slider, valueEl) {
+  const min = parseFloat(slider.min);
+  const max = parseFloat(slider.max);
+  const val = parseFloat(slider.value);
+  const percent = ((val - min) / (max - min)) * 100;
+
+  // Create gradient for fill effect
+  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim();
+  slider.style.background = `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${percent}%, ${bgColor} ${percent}%, ${bgColor} 100%)`;
+
+  // Update value display
+  if (valueEl) {
+    valueEl.textContent = Math.round(val);
+  }
+}
+
+// Initialize all sliders
+function initSliders() {
+  sliders.forEach(({ id, valId }) => {
+    const slider = document.getElementById(id);
+    const valueEl = document.getElementById(valId);
+    if (slider) {
+      updateSliderFill(slider, valueEl);
+      slider.addEventListener('input', () => {
+        updateSliderFill(slider, valueEl);
+        // Immediate smooth preview update
+        if (currentImage) {
+          switchToDualView();
+          renderBothPreviews(currentImage);
+        }
+      });
+    }
+  });
+}
+
+// Switch to dual preview view (start/end side by side)
+function switchToDualView() {
+  if (isAnimationView) {
+    isAnimationView = false;
+    dualPreview.classList.remove('hidden');
+    animationPreview.classList.add('hidden');
+    if (engine && engine.isPlaying) {
+      engine.pause();
+      playBtn.textContent = 'Play';
+    }
+  }
+}
+
+// Switch to animation view (single panel)
+function switchToAnimationView() {
+  if (!isAnimationView) {
+    isAnimationView = true;
+    dualPreview.classList.add('hidden');
+    animationPreview.classList.remove('hidden');
+    // Apply current colors to animation preview
+    updateDisplayColors();
+  }
+}
+
+// Update display colors
+function updateDisplayColors() {
+  const bgColor = bgColorInput.value;
+  const fgColor = fgColorInput.value;
+
+  document.documentElement.style.setProperty('--ascii-bg', bgColor);
+  document.documentElement.style.setProperty('--ascii-fg', fgColor);
+
+  if (asciiOutputStart) {
+    asciiOutputStart.style.backgroundColor = bgColor;
+    asciiOutputStart.style.color = fgColor;
+  }
+  if (asciiOutputEnd) {
+    asciiOutputEnd.style.backgroundColor = bgColor;
+    asciiOutputEnd.style.color = fgColor;
+  }
+  if (asciiOutputAnim) {
+    asciiOutputAnim.style.backgroundColor = bgColor;
+    asciiOutputAnim.style.color = fgColor;
+  }
+}
+
+// Mode toggle handlers
+function setTerminalMode() {
+  modeTerminal.classList.add('active');
+  modePrint.classList.remove('active');
+  bgColorInput.value = '#0a0a0a';
+  fgColorInput.value = '#00ff00';
+  updateDisplayColors();
+}
+
+function setPrintMode() {
+  modePrint.classList.add('active');
+  modeTerminal.classList.remove('active');
+  bgColorInput.value = '#ffffff';
+  fgColorInput.value = '#000000';
+  updateDisplayColors();
+}
+
 // Drag & drop
 dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag'); });
 dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('drag'); });
@@ -45,8 +166,7 @@ dropZone.addEventListener('drop', async (e) => {
     if (fileStatus) fileStatus.textContent = `Loaded: ${file.name}`;
     try {
       currentImage = await loadImageFile(file);
-      // auto-generate a quick preview single frame
-      await singleRenderPreview(currentImage);
+      await renderBothPreviews(currentImage);
     } catch (err) {
       console.error('Failed loading dropped file:', err);
       if (fileStatus) fileStatus.textContent = `Failed to load: ${file.name}`;
@@ -61,48 +181,56 @@ uploadEl.addEventListener('change', async (e) => {
   if (fileStatus) fileStatus.textContent = `Loaded: ${file.name}`;
   try {
     currentImage = await loadImageFile(file);
-    await singleRenderPreview(currentImage);
+    await renderBothPreviews(currentImage);
   } catch (err) {
     console.error('Failed loading selected file:', err);
     if (fileStatus) fileStatus.textContent = `Failed to load: ${file.name}`;
   }
 });
 
-// Single-frame preview using current UI values (start state)
-async function singleRenderPreview(img) {
+// Render both start and end frame previews
+async function renderBothPreviews(img) {
   const params = readAllParams();
-  // pick start values for immediate preview
-  const startParams = {
+
+  // Common params
+  const commonParams = {
     image: img,
-    asciiWidth: parseInt(params.asciiWidth.start, 10) || 120,
-    brightness: parseFloat(params.brightness.start) || 0,
-    contrast: parseFloat(params.contrast.start) || 0,
+    asciiWidth: params.asciiWidth,
     blur: 0,
     dithering: true,
     ditherAlgorithm: 'floyd',
     invert: false,
     ignoreWhite: true,
-    charset: params.charset.start,
+    charset: params.charset,
     manualChar: '0',
-    edgeMethod: params.edge.start,
+    edgeMethod: params.edge,
     edgeThreshold: 100,
     dogThreshold: 100,
-    zoomPercent: params.zoom.start
+    zoomPercent: 100
   };
-  const { ascii, canvas } = await renderAsciiFrame(startParams);
-  asciiOutput.textContent = ascii;
-  fitCanvasPreview(canvas);
-}
 
-// Fit small canvas to previewCanvas
-function fitCanvasPreview(smallCanvas) {
-  if (!smallCanvas) return;
-  previewCanvas.width = Math.max(320, smallCanvas.width * 4);
-  previewCanvas.height = Math.max(240, smallCanvas.height * 4);
-  const ctx = previewCanvas.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "#000"; ctx.fillRect(0,0,previewCanvas.width, previewCanvas.height);
-  ctx.drawImage(smallCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+  // Start frame
+  const startParams = {
+    ...commonParams,
+    brightness: params.brightness.start,
+    contrast: params.contrast.start
+  };
+
+  // End frame
+  const endParams = {
+    ...commonParams,
+    brightness: params.brightness.end,
+    contrast: params.contrast.end
+  };
+
+  // Render both frames
+  const [startResult, endResult] = await Promise.all([
+    renderAsciiFrame(startParams),
+    renderAsciiFrame(endParams)
+  ]);
+
+  if (asciiOutputStart) asciiOutputStart.textContent = startResult.ascii;
+  if (asciiOutputEnd) asciiOutputEnd.textContent = endResult.ascii;
 }
 
 // Generate frames and prepare engine
@@ -111,49 +239,82 @@ generateBtn.addEventListener('click', async () => {
     alert('Please upload an image first.');
     return;
   }
-  // read params
   const params = readAllParams();
-  const frames = params.frames;
-  // build interpolator
+  const numFrames = params.frames;
   const interp = makeInterpolator(params);
 
-  // create engine if needed
+  // Switch to animation view
+  switchToAnimationView();
+
   engine = new AnimationEngine(renderAsciiFrame, {
     previewCanvas,
-    asciiOutput,
+    asciiOutput: asciiOutputAnim,
     onProgress: (p) => { progressEl.value = p; },
-    onFrameGenerated: (i, frame) => {
-      // draw the first frame to preview for immediate feedback
-      if (i === 0) engine.drawFrameToPreview(0);
+    onFrameGenerated: (i) => {
+      // Show first frame immediately in animation view
+      if (i === 0 && asciiOutputAnim && engine.frames[0]) {
+        asciiOutputAnim.textContent = engine.frames[0].ascii;
+      }
     },
-    onComplete: (frames) => {
+    onComplete: () => {
       progressEl.value = 100;
-      alert('Frame generation complete. Use Play to preview or Export to save.');
+      // Show first frame when done
+      if (asciiOutputAnim && engine.frames[0]) {
+        asciiOutputAnim.textContent = engine.frames[0].ascii;
+      }
     }
   });
 
-  // generate frames
   progressEl.value = 0;
-  await engine.generateFrames(currentImage, frames, (i, total) => interp(i, total));
-  progressEl.value = 100;
+  generateBtn.disabled = true;
+  generateBtn.textContent = 'Generating...';
+
+  try {
+    await engine.generateFrames(currentImage, numFrames, (i, total) => interp(i, total));
+    progressEl.value = 100;
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Generate';
+  }
 });
 
 // Play / Pause
 playBtn.addEventListener('click', () => {
-  if (!engine || !engine.frames || engine.frames.length === 0) { alert('Generate frames first.'); return; }
-  if (engine.isPlaying) { engine.pause(); playBtn.textContent = 'Play'; }
-  else { engine.play(parseInt(document.getElementById('fps').value, 10) || 12); playBtn.textContent = 'Pause'; }
+  if (!engine || !engine.frames || engine.frames.length === 0) {
+    alert('Generate frames first.');
+    return;
+  }
+
+  // Ensure we're in animation view when playing
+  switchToAnimationView();
+
+  if (engine.isPlaying) {
+    engine.pause();
+    playBtn.textContent = 'Play';
+  } else {
+    // Update the engine's asciiOutput reference to animation panel
+    engine.asciiOutput = asciiOutputAnim;
+    engine.play(parseInt(document.getElementById('fps').value, 10) || 12);
+    playBtn.textContent = 'Pause';
+  }
 });
 
 // Export GIF
 exportGifBtn.addEventListener('click', async () => {
-  if (!engine || !engine.frames || engine.frames.length === 0) { alert('Generate frames first.'); return; }
+  if (!engine || !engine.frames || engine.frames.length === 0) {
+    alert('Generate frames first.');
+    return;
+  }
+  const params = readAllParams();
   try {
     exportGifBtn.disabled = true;
     exportGifBtn.textContent = 'Encoding...';
     const res = await exportAsGif(engine.frames, {
       fps: parseInt(document.getElementById('fps').value, 10) || 12,
-      onProgress: (p) => { progressEl.value = Math.round(p*100); }
+      fontSize: 6,
+      textColor: params.fgColor,
+      bgColor: params.bgColor,
+      onProgress: (p) => { progressEl.value = Math.round(p * 100); }
     });
     const a = document.createElement('a');
     a.href = res.url;
@@ -170,19 +331,25 @@ exportGifBtn.addEventListener('click', async () => {
 
 // Export WebM via MediaRecorder
 exportWebmBtn.addEventListener('click', async () => {
-  if (!engine || !engine.frames || engine.frames.length === 0) { alert('Generate frames first.'); return; }
+  if (!engine || !engine.frames || engine.frames.length === 0) {
+    alert('Generate frames first.');
+    return;
+  }
+  const params = readAllParams();
   try {
     exportWebmBtn.disabled = true;
     exportWebmBtn.textContent = 'Recording...';
-    const { blob, url } = await exportAsWebM(engine.frames, {
+    const { url } = await exportAsWebM(engine.frames, {
       fps: parseInt(document.getElementById('fps').value, 10) || 12,
-      onProgress: (p) => { progressEl.value = Math.round(p*100); }
+      fontSize: 6,
+      textColor: params.fgColor,
+      bgColor: params.bgColor,
+      onProgress: (p) => { progressEl.value = Math.round(p * 100); }
     });
     const a = document.createElement('a');
     a.href = url;
     a.download = 'ascii_animation.webm';
     a.click();
-    alert('WebM exported. Convert to MP4 with ffmpeg if needed (see README).');
   } catch (err) {
     console.error(err);
     alert('WebM export failed: ' + err.message);
@@ -192,15 +359,43 @@ exportWebmBtn.addEventListener('click', async () => {
   }
 });
 
-// Boot: optionally load a default image (same as your original approach)
+// Listen for setting changes to update previews
+function setupLivePreviewListeners() {
+  const settingIds = ['asciiWidth', 'edge', 'charset'];
+  settingIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        if (currentImage) {
+          switchToDualView();
+          renderBothPreviews(currentImage);
+        }
+      });
+    }
+  });
+}
+
+// Color input listeners
+bgColorInput.addEventListener('input', updateDisplayColors);
+fgColorInput.addEventListener('input', updateDisplayColors);
+
+// Mode toggle listeners
+modeTerminal.addEventListener('click', setTerminalMode);
+modePrint.addEventListener('click', setPrintMode);
+
+// Boot: initialize and load default image
 window.addEventListener('load', async () => {
+  initSliders();
+  setupLivePreviewListeners();
+  updateDisplayColors();
+
   try {
     const defaultUrl = "https://i.ibb.co/chHSSFQk/horse.png";
     const img = new Image();
     img.crossOrigin = "Anonymous";
     await new Promise((res) => { img.onload = res; img.src = defaultUrl; });
     currentImage = img;
-    await singleRenderPreview(currentImage);
+    await renderBothPreviews(currentImage);
   } catch (err) {
     console.warn('Default image load failed:', err);
   }
