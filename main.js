@@ -3,7 +3,7 @@ console.log('ASCII app main module loaded');
 import { renderAsciiFrame } from './AsciiRender.js';
 import { readAllParams, makeInterpolator } from './UIControls.js';
 import { AnimationEngine } from './animationEngine.js';
-import { exportAsGif, exportAsWebM } from './exporter.js';
+import { exportAsGif, exportAsWebM, exportAsMp4 } from './exporter.js';
 
 // DOM
 const uploadEl = document.getElementById('upload');
@@ -13,6 +13,7 @@ const generateBtn = document.getElementById('generateBtn');
 const playBtn = document.getElementById('playBtn');
 const exportGifBtn = document.getElementById('exportGifBtn');
 const exportWebmBtn = document.getElementById('exportWebmBtn');
+const exportMp4Btn = document.getElementById('exportMp4Btn');
 const previewCanvas = document.getElementById('previewCanvas');
 const asciiOutputStart = document.getElementById('asciiOutputStart');
 const asciiOutputEnd = document.getElementById('asciiOutputEnd');
@@ -26,6 +27,8 @@ const fgColorInput = document.getElementById('fgColor');
 
 // Sliders for live updates
 const sliders = [
+  { id: 'scale', valId: 'scale_val' },
+  { id: 'detail', valId: 'detail_val' },
   { id: 'start_brightness', valId: 'start_brightness_val' },
   { id: 'end_brightness', valId: 'end_brightness_val' },
   { id: 'start_contrast', valId: 'start_contrast_val' },
@@ -196,17 +199,17 @@ async function renderBothPreviews(img) {
   const commonParams = {
     image: img,
     asciiWidth: params.asciiWidth,
+    blockSize: params.blockSize,
     blur: 0,
     dithering: true,
     ditherAlgorithm: 'floyd',
     invert: false,
     ignoreWhite: true,
     charset: params.charset,
-    manualChar: '0',
+    manualCharset: params.manualCharset,
     edgeMethod: params.edge,
     edgeThreshold: 100,
-    dogThreshold: 100,
-    zoomPercent: 100
+    dogThreshold: 100
   };
 
   // Start frame
@@ -311,7 +314,7 @@ exportGifBtn.addEventListener('click', async () => {
     exportGifBtn.textContent = 'Encoding...';
     const res = await exportAsGif(engine.frames, {
       fps: parseInt(document.getElementById('fps').value, 10) || 12,
-      fontSize: 6,
+      fontSize: 10,
       textColor: params.fgColor,
       bgColor: params.bgColor,
       onProgress: (p) => { progressEl.value = Math.round(p * 100); }
@@ -341,7 +344,7 @@ exportWebmBtn.addEventListener('click', async () => {
     exportWebmBtn.textContent = 'Recording...';
     const { url } = await exportAsWebM(engine.frames, {
       fps: parseInt(document.getElementById('fps').value, 10) || 12,
-      fontSize: 6,
+      fontSize: 10,
       textColor: params.fgColor,
       bgColor: params.bgColor,
       onProgress: (p) => { progressEl.value = Math.round(p * 100); }
@@ -359,9 +362,39 @@ exportWebmBtn.addEventListener('click', async () => {
   }
 });
 
+// Export MP4 via MediaRecorder
+exportMp4Btn.addEventListener('click', async () => {
+  if (!engine || !engine.frames || engine.frames.length === 0) {
+    alert('Generate frames first.');
+    return;
+  }
+  const params = readAllParams();
+  try {
+    exportMp4Btn.disabled = true;
+    exportMp4Btn.textContent = 'Recording...';
+    const { url, extension } = await exportAsMp4(engine.frames, {
+      fps: parseInt(document.getElementById('fps').value, 10) || 12,
+      fontSize: 10,
+      textColor: params.fgColor,
+      bgColor: params.bgColor,
+      onProgress: (p) => { progressEl.value = Math.round(p * 100); }
+    });
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ascii_animation.${extension}`;
+    a.click();
+  } catch (err) {
+    console.error(err);
+    alert('MP4 export failed: ' + err.message);
+  } finally {
+    exportMp4Btn.disabled = false;
+    exportMp4Btn.textContent = 'Export MP4';
+  }
+});
+
 // Listen for setting changes to update previews
 function setupLivePreviewListeners() {
-  const settingIds = ['asciiWidth', 'edge', 'charset'];
+  const settingIds = ['scale', 'detail', 'edge', 'charset', 'manualCharset'];
   settingIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -371,8 +404,32 @@ function setupLivePreviewListeners() {
           renderBothPreviews(currentImage);
         }
       });
+      // Also listen for input on manualCharset for real-time updates
+      if (id === 'manualCharset') {
+        el.addEventListener('input', () => {
+          if (currentImage) {
+            switchToDualView();
+            renderBothPreviews(currentImage);
+          }
+        });
+      }
     }
   });
+
+  // Show/hide manual charset input based on charset selection
+  const charsetSelect = document.getElementById('charset');
+  const manualCharsetRow = document.getElementById('manualCharsetRow');
+  if (charsetSelect && manualCharsetRow) {
+    const updateManualVisibility = () => {
+      if (charsetSelect.value === 'manual') {
+        manualCharsetRow.classList.remove('hidden');
+      } else {
+        manualCharsetRow.classList.add('hidden');
+      }
+    };
+    charsetSelect.addEventListener('change', updateManualVisibility);
+    updateManualVisibility(); // Set initial state
+  }
 }
 
 // Color input listeners

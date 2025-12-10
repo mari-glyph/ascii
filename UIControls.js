@@ -20,9 +20,12 @@ export function readSingleParam(id) {
 // Read whole parameter set from UI
 export function readAllParams() {
   // Single values (same for start/end)
-  const asciiWidth = parseInt(readSingleParam('asciiWidth'), 10) || 200;
+  const asciiWidth = parseInt(readSingleParam('scale'), 10) || 120;
+  // Detail controls pixel block size (1 = no blocking, higher = larger blocks)
+  const blockSize = parseInt(readSingleParam('detail'), 10) || 1;
   const edge = readSingleParam('edge') || 'none';
-  const charset = readSingleParam('charset') || 'detailed';
+  const charset = readSingleParam('charset') || 'dense';
+  const manualCharset = readSingleParam('manualCharset') || '@#%*+=-:. ';
 
   // Animated values (start/end pairs)
   const brightness = readParamPair('brightness');
@@ -37,10 +40,12 @@ export function readAllParams() {
 
   return {
     asciiWidth,
+    blockSize,
     brightness,
     contrast,
     edge,
     charset,
+    manualCharset,
     frames,
     fps,
     bgColor,
@@ -60,9 +65,11 @@ export function makeInterpolator(paramSet) {
 
     return {
       asciiWidth: paramSet.asciiWidth,
+      blockSize: paramSet.blockSize,
       brightness: brightnessVal,
       contrast: contrastVal,
       charset: paramSet.charset,
+      manualCharset: paramSet.manualCharset,
       edgeMethod: paramSet.edge
     };
   };

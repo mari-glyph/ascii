@@ -8,6 +8,7 @@ Options shape:
 {
   image: HTMLImageElement or ImageBitmap,
   asciiWidth: number,
+  blockSize: number, // pixel block size for detail (1 = full detail, higher = more pixelated)
   brightness: number,
   contrast: number,
   blur: number, // px
@@ -15,12 +16,11 @@ Options shape:
   ditherAlgorithm: 'floyd'|'atkinson'|'noise'|'ordered',
   invert: boolean,
   ignoreWhite: boolean,
-  charset: 'detailed'|'standard'|...|'manual',
-  manualChar: string,
+  charset: 'dense'|'standard'|...|'manual',
+  manualCharset: string,
   edgeMethod: 'none'|'sobel'|'dog',
   edgeThreshold: number,
   dogThreshold: number,
-  zoomPercent: number,
   fontAspectRatio: number (optional)
 }
 */
@@ -166,16 +166,16 @@ function applyEdgeDetection1D(gray, width, height, threshold) {
 }
 
 // Map charset key to string (kept your gradients)
-function charsetToGradient(charset, manualChar = '0') {
+function charsetToGradient(charset, manualCharset = '@#%*+=-:. ') {
   switch (charset) {
-    case 'standard': return "@%#*+=-:.";
+    case 'standard': return "@%#*+=-:. ";
     case 'blocks': return "█▓▒░ ";
     case 'binary': return "01";
-    case 'manual': return (manualChar || '0') + " ";
+    case 'manual': return manualCharset || '@#%*+=-:. ';
     case 'hex': return "0123456789ABCDEF";
-    case 'detailed':
+    case 'dense':
     default:
-      return "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^'.";
+      return "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^'. ";
   }
 }
 
@@ -196,6 +196,7 @@ export async function renderAsciiFrame(options) {
   const {
     image,
     asciiWidth = 120,
+    blockSize = 1,
     brightness = 0,
     contrast = 0,
     blur = 0,
@@ -203,12 +204,11 @@ export async function renderAsciiFrame(options) {
     ditherAlgorithm = 'floyd',
     invert = false,
     ignoreWhite = true,
-    charset = 'detailed',
-    manualChar = '0',
+    charset = 'dense',
+    manualCharset = '@#%*+=-:. ',
     edgeMethod = 'none',
     edgeThreshold = 100,
     dogThreshold = 100,
-    zoomPercent = 100,
     fontAspectRatio = 0.55
   } = options;
 
@@ -223,8 +223,26 @@ export async function renderAsciiFrame(options) {
   // Apply blur via canvas filter (browser support required)
   ctx.filter = blur > 0 ? `blur(${blur}px)` : 'none';
 
-  // Draw the image scaled to ascii dims
-  ctx.drawImage(image, 0, 0, asciiWidth, asciiHeight);
+  // For blockSize > 1, first draw to a smaller canvas then scale up (pixelate effect)
+  if (blockSize > 1) {
+    // Create a temporary small canvas
+    const smallWidth = Math.max(1, Math.ceil(asciiWidth / blockSize));
+    const smallHeight = Math.max(1, Math.ceil(asciiHeight / blockSize));
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = smallWidth;
+    tempCanvas.height = smallHeight;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // Draw image scaled down to small canvas
+    tempCtx.drawImage(image, 0, 0, smallWidth, smallHeight);
+
+    // Draw small canvas scaled up to main canvas with nearest-neighbor (pixelated)
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tempCanvas, 0, 0, asciiWidth, asciiHeight);
+  } else {
+    // Draw the image scaled to ascii dims normally
+    ctx.drawImage(image, 0, 0, asciiWidth, asciiHeight);
+  }
 
   // Read pixel data
   const imageData = ctx.getImageData(0, 0, asciiWidth, asciiHeight);
@@ -245,7 +263,7 @@ export async function renderAsciiFrame(options) {
     grayOriginal[j] = adjusted;
   }
 
-  const gradient = charsetToGradient(charset, manualChar);
+  const gradient = charsetToGradient(charset, manualCharset);
   const nLevels = gradient.length;
 
   // Edge path: DOG (contour) is a specialized path; sobel uses a simple map

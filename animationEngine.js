@@ -25,6 +25,7 @@ export class AnimationEngine {
       const options = {
         image,
         asciiWidth: params.asciiWidth,
+        blockSize: params.blockSize,
         brightness: params.brightness,
         contrast: params.contrast,
         blur: 0,
@@ -33,11 +34,10 @@ export class AnimationEngine {
         invert: false,
         ignoreWhite: true,
         charset: params.charset,
-        manualChar: '0',
+        manualCharset: params.manualCharset,
         edgeMethod: params.edgeMethod,
         edgeThreshold: 100,
-        dogThreshold: 100,
-        zoomPercent: params.zoomPercent
+        dogThreshold: 100
       };
 
       // renderFunc may be async
