@@ -20,9 +20,19 @@ export function readSingleParam(id) {
 // Read whole parameter set from UI
 export function readAllParams() {
   // Single values (same for start/end)
-  const asciiWidth = parseInt(readSingleParam('scale'), 10) || 120;
+  const baseAsciiWidth = parseInt(readSingleParam('scale'), 10) || 120;
   // Detail controls pixel block size (1 = no blocking, higher = larger blocks)
   const blockSize = parseInt(readSingleParam('detail'), 10) || 1;
+
+  // Char size controls how many pixels each ASCII character represents
+  // Higher value = fewer characters = each char maps to larger image area
+  // Range 1-100: 1 = many chars (fine detail), 100 = few chars (coarse)
+  const charSize = parseInt(readSingleParam('charSize'), 10) || 3;
+  // Calculate effective ASCII width: higher charSize = fewer columns
+  // charSize 1 = full baseAsciiWidth, charSize 100 = baseAsciiWidth / 10
+  const charSizeScale = 1 + (charSize - 1) * 0.1; // 1 to 10.9
+  const asciiWidth = Math.max(10, Math.round(baseAsciiWidth / charSizeScale));
+
   const edge = readSingleParam('edge') || 'none';
   const charset = readSingleParam('charset') || 'dense';
   const manualCharset = readSingleParam('manualCharset') || '@#%*+=-:. ';
@@ -38,8 +48,13 @@ export function readAllParams() {
   const bgColor = readSingleParam('bgColor') || '#0a0a0a';
   const fgColor = readSingleParam('fgColor') || '#00ff00';
 
+  // Font settings
+  const fontFamily = readSingleParam('fontFamily') || "'Courier New', monospace";
+
   return {
     asciiWidth,
+    baseAsciiWidth,
+    charSize,
     blockSize,
     brightness,
     contrast,
@@ -49,7 +64,8 @@ export function readAllParams() {
     frames,
     fps,
     bgColor,
-    fgColor
+    fgColor,
+    fontFamily
   };
 }
 

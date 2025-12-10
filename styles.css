@@ -328,14 +328,14 @@ button:disabled {
   background: var(--ascii-bg);
   color: var(--ascii-fg);
   padding: 12px;
-  font-family: "Courier New", "Lucida Console", Monaco, monospace;
+  font-family: "Courier New", monospace;
   font-size: 3px;
   line-height: 3px;
   letter-spacing: 0px;
   white-space: pre;
   border: 1px solid var(--panel-border);
   margin: 0;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s, color 0.2s, font-size 0.1s, line-height 0.1s;
 }
 
 /* Hidden utility class */
@@ -446,4 +446,318 @@ input[type="file"]::file-selector-button:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-dim);
+}
+
+/* ============================================
+   PRINT MODE - Paper/Retro Theme
+   ============================================ */
+
+/* Noise texture overlay - created with CSS */
+body.print-mode::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+body.print-mode {
+  --bg-dark: #e8e0d0;
+  --panel: #f5f0e6;
+  --panel-border: #c9bfaf;
+  --text: #2c2416;
+  --text-dim: #6b5d4d;
+  --text-bright: #1a1208;
+  --accent: #8b4513;
+  --accent-dim: #d4c4a8;
+  --ascii-bg: #f5f0e6;
+  --ascii-fg: #1a1a1a;
+
+  background:
+    /* Subtle paper grain */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 119, 101, 0.02) 2px,
+      rgba(139, 119, 101, 0.02) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 119, 101, 0.015) 2px,
+      rgba(139, 119, 101, 0.015) 4px
+    ),
+    /* Cream paper base gradient */
+    linear-gradient(
+      180deg,
+      #f5f0e6 0%,
+      #ede5d5 50%,
+      #e8dfd0 100%
+    );
+}
+
+body.print-mode .layout {
+  background: transparent;
+}
+
+body.print-mode .sidebar {
+  background:
+    /* Inner shadow for depth */
+    linear-gradient(90deg, rgba(0,0,0,0.03) 0%, transparent 3px),
+    /* Paper texture */
+    linear-gradient(180deg, #f8f4eb 0%, #f0eadc 100%);
+  border-right: 2px solid #c9bfaf;
+  box-shadow:
+    inset -2px 0 4px rgba(0,0,0,0.05),
+    2px 0 8px rgba(0,0,0,0.08);
+}
+
+body.print-mode .sidebar h2 {
+  color: #2c2416;
+  border-bottom: 2px solid #c9bfaf;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+}
+
+body.print-mode .sidebar h2::before {
+  content: "◆ ";
+  color: #8b4513;
+}
+
+body.print-mode .control-group {
+  border-bottom: 1px solid #d4c4a8;
+}
+
+body.print-mode .control-group h3 {
+  color: #6b5d4d;
+}
+
+body.print-mode .control-group h3::before {
+  content: "▸ ";
+  color: #8b4513;
+}
+
+/* Print mode inputs */
+body.print-mode input[type="number"],
+body.print-mode select {
+  background: #fff;
+  border: 1px solid #c9bfaf;
+  color: #2c2416;
+  box-shadow:
+    inset 1px 1px 2px rgba(0,0,0,0.08),
+    0 1px 0 rgba(255,255,255,0.5);
+  border-radius: 2px;
+}
+
+body.print-mode input[type="number"]:focus,
+body.print-mode select:focus {
+  border-color: #8b4513;
+  box-shadow:
+    inset 1px 1px 2px rgba(0,0,0,0.08),
+    0 0 0 2px rgba(139,69,19,0.15);
+}
+
+/* Print mode sliders */
+body.print-mode input[type="range"] {
+  background: #d4c4a8;
+  border: 1px solid #c9bfaf;
+  border-radius: 4px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+body.print-mode input[type="range"]::-webkit-slider-thumb {
+  background: linear-gradient(180deg, #f5f0e6 0%, #e0d5c5 100%);
+  border: 1px solid #8b4513;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+body.print-mode input[type="range"]::-moz-range-thumb {
+  background: linear-gradient(180deg, #f5f0e6 0%, #e0d5c5 100%);
+  border: 1px solid #8b4513;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+/* Print mode color input */
+body.print-mode input[type="color"] {
+  border: 1px solid #c9bfaf;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.08);
+}
+
+/* Print mode toggle buttons */
+body.print-mode .toggle-btn {
+  background: linear-gradient(180deg, #fff 0%, #f0eadc 100%);
+  border: 1px solid #c9bfaf;
+  color: #6b5d4d;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  border-radius: 0;
+}
+
+body.print-mode .toggle-btn:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+body.print-mode .toggle-btn:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+body.print-mode .toggle-btn.active {
+  background: linear-gradient(180deg, #8b4513 0%, #6b3410 100%);
+  color: #f5f0e6;
+  border-color: #5a2d0d;
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,0.3),
+    0 1px 0 rgba(255,255,255,0.3);
+}
+
+body.print-mode .toggle-btn:hover:not(.active) {
+  background: linear-gradient(180deg, #f8f4eb 0%, #e8dfd0 100%);
+}
+
+/* Print mode buttons */
+body.print-mode button {
+  background: linear-gradient(180deg, #fff 0%, #f0eadc 100%);
+  color: #2c2416;
+  border: 1px solid #c9bfaf;
+  border-radius: 3px;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+body.print-mode button:hover {
+  background: linear-gradient(180deg, #f8f4eb 0%, #e0d5c5 100%);
+  border-color: #8b4513;
+}
+
+body.print-mode button:active {
+  background: linear-gradient(180deg, #e0d5c5 0%, #d4c4a8 100%);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Print mode main content */
+body.print-mode .main-content {
+  background:
+    /* Subtle vignette */
+    radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.03) 100%),
+    linear-gradient(180deg, #ede5d5 0%, #e8dfd0 100%);
+}
+
+/* Print mode preview panels */
+body.print-mode .preview-label {
+  color: #6b5d4d;
+  border-bottom: 1px solid #c9bfaf;
+  background: linear-gradient(180deg, #f8f4eb 0%, #f0eadc 100%);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+body.print-mode .ascii-preview {
+  border: 1px solid #c9bfaf;
+  box-shadow:
+    inset 2px 2px 8px rgba(0,0,0,0.06),
+    0 2px 8px rgba(0,0,0,0.08);
+  border-radius: 2px;
+  /* Paper-like background with subtle texture */
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(139, 119, 101, 0.015) 1px,
+      rgba(139, 119, 101, 0.015) 2px
+    ),
+    #f5f0e6 !important;
+}
+
+/* Print mode drop zone */
+body.print-mode .drop-zone {
+  border: 2px dashed #c9bfaf;
+  background: rgba(255,255,255,0.5);
+  border-radius: 4px;
+}
+
+body.print-mode .drop-zone:hover,
+body.print-mode .drop-zone.drag {
+  border-color: #8b4513;
+  background: rgba(139,69,19,0.05);
+}
+
+/* Print mode progress bar */
+body.print-mode progress::-webkit-progress-bar {
+  background: #e0d5c5;
+  border: 1px solid #c9bfaf;
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+body.print-mode progress::-webkit-progress-value {
+  background: linear-gradient(180deg, #8b4513 0%, #6b3410 100%);
+  border-radius: 1px;
+}
+
+body.print-mode progress::-moz-progress-bar {
+  background: linear-gradient(180deg, #8b4513 0%, #6b3410 100%);
+}
+
+/* Print mode file input */
+body.print-mode input[type="file"] {
+  color: #6b5d4d;
+}
+
+body.print-mode input[type="file"]::file-selector-button {
+  background: linear-gradient(180deg, #fff 0%, #f0eadc 100%);
+  color: #2c2416;
+  border: 1px solid #c9bfaf;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+body.print-mode input[type="file"]::file-selector-button:hover {
+  background: linear-gradient(180deg, #f8f4eb 0%, #e0d5c5 100%);
+}
+
+/* Print mode scrollbars */
+body.print-mode ::-webkit-scrollbar-track {
+  background: #e0d5c5;
+}
+
+body.print-mode ::-webkit-scrollbar-thumb {
+  background: #c9bfaf;
+  border-radius: 3px;
+}
+
+body.print-mode ::-webkit-scrollbar-thumb:hover {
+  background: #8b4513;
+}
+
+/* Print mode slider value text */
+body.print-mode .slider-value {
+  color: #6b5d4d;
+}
+
+/* Print mode hint text */
+body.print-mode .hint {
+  color: #6b5d4d;
+}
+
+body.print-mode .hint code {
+  background: #fff;
+  border: 1px solid #d4c4a8;
+  border-radius: 2px;
 }

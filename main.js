@@ -29,11 +29,16 @@ const fgColorInput = document.getElementById('fgColor');
 const sliders = [
   { id: 'scale', valId: 'scale_val' },
   { id: 'detail', valId: 'detail_val' },
+  { id: 'charSize', valId: 'charSize_val' },
   { id: 'start_brightness', valId: 'start_brightness_val' },
   { id: 'end_brightness', valId: 'end_brightness_val' },
   { id: 'start_contrast', valId: 'start_contrast_val' },
   { id: 'end_contrast', valId: 'end_contrast_val' }
 ];
+
+// Font family selector
+const fontFamilySelect = document.getElementById('fontFamily');
+const charSizeSlider = document.getElementById('charSize');
 
 // View containers
 const dualPreview = document.getElementById('dualPreview');
@@ -141,10 +146,31 @@ function updateDisplayColors() {
   }
 }
 
+// Update character size and font family for ASCII output
+function updateCharSizeAndFont() {
+  const charSize = parseInt(charSizeSlider?.value || 3, 10);
+  const fontFamily = fontFamilySelect?.value || "'Courier New', monospace";
+
+  // Calculate font size and line height based on charSize slider
+  // Range: 1-100 maps to 1px-20px font size (scaled for monospace aspect ratio)
+  const fontSize = Math.max(1, charSize * 0.2);
+  const lineHeight = fontSize; // Keep line-height equal to font-size for proper scaling
+
+  const asciiElements = [asciiOutputStart, asciiOutputEnd, asciiOutputAnim];
+  asciiElements.forEach(el => {
+    if (el) {
+      el.style.fontFamily = fontFamily;
+      el.style.fontSize = `${fontSize}px`;
+      el.style.lineHeight = `${lineHeight}px`;
+    }
+  });
+}
+
 // Mode toggle handlers
 function setTerminalMode() {
   modeTerminal.classList.add('active');
   modePrint.classList.remove('active');
+  document.body.classList.remove('print-mode');
   bgColorInput.value = '#0a0a0a';
   fgColorInput.value = '#00ff00';
   updateDisplayColors();
@@ -153,8 +179,9 @@ function setTerminalMode() {
 function setPrintMode() {
   modePrint.classList.add('active');
   modeTerminal.classList.remove('active');
-  bgColorInput.value = '#ffffff';
-  fgColorInput.value = '#000000';
+  document.body.classList.add('print-mode');
+  bgColorInput.value = '#f5f0e6';
+  fgColorInput.value = '#1a1a1a';
   updateDisplayColors();
 }
 
@@ -394,7 +421,7 @@ exportMp4Btn.addEventListener('click', async () => {
 
 // Listen for setting changes to update previews
 function setupLivePreviewListeners() {
-  const settingIds = ['scale', 'detail', 'edge', 'charset', 'manualCharset'];
+  const settingIds = ['scale', 'detail', 'charSize', 'edge', 'charset', 'manualCharset'];
   settingIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -430,6 +457,16 @@ function setupLivePreviewListeners() {
     charsetSelect.addEventListener('change', updateManualVisibility);
     updateManualVisibility(); // Set initial state
   }
+
+  // Character size slider listener
+  if (charSizeSlider) {
+    charSizeSlider.addEventListener('input', updateCharSizeAndFont);
+  }
+
+  // Font family selector listener
+  if (fontFamilySelect) {
+    fontFamilySelect.addEventListener('change', updateCharSizeAndFont);
+  }
 }
 
 // Color input listeners
@@ -445,6 +482,7 @@ window.addEventListener('load', async () => {
   initSliders();
   setupLivePreviewListeners();
   updateDisplayColors();
+  updateCharSizeAndFont();
 
   try {
     const defaultUrl = "https://i.ibb.co/chHSSFQk/horse.png";

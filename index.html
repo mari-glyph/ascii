@@ -3,6 +3,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ASCII Animation Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&family=IBM+Plex+Mono:wght@400&family=Inconsolata:wght@400&family=JetBrains+Mono:wght@400&family=Roboto+Mono:wght@400&family=Source+Code+Pro:wght@400&family=Ubuntu+Mono:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -29,11 +32,33 @@
         </div>
 
         <div class="param-row slider-row">
-          <label id="detail-label">Detail</label>
+          <label id="detail-label">Pixelation</label>
           <div class="slider-container">
             <input type="range" id="detail" min="1" max="20" value="1" aria-labelledby="detail-label" title="Pixel block size">
             <span class="slider-value" id="detail_val">1</span>
           </div>
+        </div>
+
+        <div class="param-row slider-row">
+          <label id="charsize-label">Char Size</label>
+          <div class="slider-container">
+            <input type="range" id="charSize" min="1" max="100" value="3" aria-labelledby="charsize-label" title="Character size relative to image">
+            <span class="slider-value" id="charSize_val">3</span>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <label>Font</label>
+          <select id="fontFamily">
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+            <option value="'Fira Code', monospace">Fira Code</option>
+            <option value="'Source Code Pro', monospace">Source Code Pro</option>
+            <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+            <option value="'Roboto Mono', monospace">Roboto Mono</option>
+            <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
+            <option value="'Inconsolata', monospace">Inconsolata</option>
+          </select>
         </div>
 
         <div class="param-row">
