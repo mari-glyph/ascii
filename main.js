@@ -70,9 +70,10 @@ function updateSliderFill(slider, valueEl) {
   const val = parseFloat(slider.value);
   const percent = ((val - min) / (max - min)) * 100;
 
-  // Create gradient for fill effect
-  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim();
+  // Create gradient for fill effect - use burnt orange in print mode
+  const isPrintMode = document.body.classList.contains('print-mode');
+  const accentColor = isPrintMode ? '#cc5500' : getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const bgColor = isPrintMode ? '#d4c4a8' : getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim();
   slider.style.background = `linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${percent}%, ${bgColor} ${percent}%, ${bgColor} 100%)`;
 
   // Update value display
@@ -166,6 +167,17 @@ function updateCharSizeAndFont() {
   });
 }
 
+// Refresh all slider fills (for mode switching)
+function refreshAllSliderFills() {
+  sliders.forEach(({ id, valId }) => {
+    const slider = document.getElementById(id);
+    const valueEl = document.getElementById(valId);
+    if (slider) {
+      updateSliderFill(slider, valueEl);
+    }
+  });
+}
+
 // Mode toggle handlers
 function setTerminalMode() {
   modeTerminal.classList.add('active');
@@ -174,6 +186,7 @@ function setTerminalMode() {
   bgColorInput.value = '#0a0a0a';
   fgColorInput.value = '#00ff00';
   updateDisplayColors();
+  refreshAllSliderFills();
 }
 
 function setPrintMode() {
@@ -183,6 +196,7 @@ function setPrintMode() {
   bgColorInput.value = '#f5f0e6';
   fgColorInput.value = '#1a1a1a';
   updateDisplayColors();
+  refreshAllSliderFills();
 }
 
 // Drag & drop
