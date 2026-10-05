@@ -1,201 +1,39 @@
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ASCII Animation Tool</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&family=IBM+Plex+Mono:wght@400&family=Inconsolata:wght@400&family=JetBrains+Mono:wght@400&family=Roboto+Mono:wght@400&family=Source+Code+Pro:wght@400&family=Ubuntu+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css" />
+  <title>tisane workshop</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600&family=JetBrains+Mono:wght@400&family=Fira+Code:wght@400&family=IBM+Plex+Mono:wght@400&family=Inconsolata:wght@400&family=Roboto+Mono:wght@400&family=Source+Code+Pro:wght@400&family=Ubuntu+Mono:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="layout">
-    <button type="button" id="sidebarToggle" class="sidebar-toggle" title="Toggle sidebar">
-      <span class="toggle-icon">◀</span>
-    </button>
-    <aside class="sidebar">
-      <h2>ASCII Animation Tool</h2>
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="-2100 700 11800 7700" aria-hidden="true">
+        <path d="M3529.67 5097.59L4703.53 716.67C3275.54 5545.1 -950.543 4041.06 3849.17 1100.29C-2070.32 3920.98 3065.99 6828.07 3529.67 5097.59Z" />
+        <path d="M4051.36 3961.99L2877.49 8342.92C4305.48 3514.49 8531.57 5018.52 3731.86 7959.29C9651.34 5138.6 4515.04 2231.52 4051.36 3961.99Z" />
+      </svg>
+      <span class="wordmark">tisane</span>
+      <span class="sub">hash &amp; asset workshop</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="rooms"></nav>
+  </header>
 
-      <section class="control-group">
-        <h3>Upload</h3>
-        <input type="file" id="upload" accept="image/*" />
-        <div id="dropZone" class="drop-zone">Drag & Drop image here</div>
-        <div id="fileStatus" class="hint" style="margin-top:8px;">No file loaded</div>
-      </section>
-
-      <section class="control-group">
-        <h3>Render Settings</h3>
-
-        <div class="param-row slider-row">
-          <label id="scale-label">Scale</label>
-          <div class="slider-container">
-            <input type="range" id="scale" min="1" max="600" value="120" aria-labelledby="scale-label" title="ASCII width">
-            <span class="slider-value" id="scale_val">120</span>
-          </div>
-        </div>
-
-        <div class="param-row slider-row">
-          <label id="detail-label">Pixelation</label>
-          <div class="slider-container">
-            <input type="range" id="detail" min="1" max="20" value="1" aria-labelledby="detail-label" title="Pixel block size">
-            <span class="slider-value" id="detail_val">1</span>
-          </div>
-        </div>
-
-        <div class="param-row slider-row">
-          <label id="charsize-label">Char Size</label>
-          <div class="slider-container">
-            <input type="range" id="charSize" min="1" max="100" value="3" aria-labelledby="charsize-label" title="Character size relative to image">
-            <span class="slider-value" id="charSize_val">3</span>
-          </div>
-        </div>
-
-        <div class="param-row">
-          <label>Font</label>
-          <select id="fontFamily">
-            <option value="'Courier New', monospace">Courier New</option>
-            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-            <option value="'Fira Code', monospace">Fira Code</option>
-            <option value="'Source Code Pro', monospace">Source Code Pro</option>
-            <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
-            <option value="'Roboto Mono', monospace">Roboto Mono</option>
-            <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
-            <option value="'Inconsolata', monospace">Inconsolata</option>
-          </select>
-        </div>
-
-        <div class="param-row">
-          <label>Edge</label>
-          <select id="edge">
-            <option value="none">none</option>
-            <option value="sobel">sobel</option>
-            <option value="dog">dog</option>
-          </select>
-        </div>
-
-        <div class="param-row">
-          <label>Charset</label>
-          <select id="charset">
-            <option value="dense">dense</option>
-            <option value="standard">standard</option>
-            <option value="blocks">blocks</option>
-            <option value="binary">binary</option>
-            <option value="hex">hex</option>
-            <option value="manual">manual</option>
-          </select>
-        </div>
-        <div class="param-row hidden" id="manualCharsetRow">
-          <label>Characters</label>
-          <input type="text" id="manualCharset" value="@#%*+=-:. " placeholder="Dark to light chars">
-        </div>
-      </section>
-
-      <section class="control-group">
-        <h3>Animation (Start / End)</h3>
-
-        <div class="param-row slider-row">
-          <label id="brightness-label">Brightness</label>
-          <div class="slider-pair">
-            <div class="slider-container">
-              <input type="range" id="start_brightness" min="-200" max="200" value="0" aria-labelledby="brightness-label" title="Start brightness">
-              <span class="slider-value" id="start_brightness_val">0</span>
-            </div>
-            <div class="slider-container">
-              <input type="range" id="end_brightness" min="-200" max="200" value="50" aria-labelledby="brightness-label" title="End brightness">
-              <span class="slider-value" id="end_brightness_val">50</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="param-row slider-row">
-          <label id="contrast-label">Contrast</label>
-          <div class="slider-pair">
-            <div class="slider-container">
-              <input type="range" id="start_contrast" min="-255" max="255" value="0" aria-labelledby="contrast-label" title="Start contrast">
-              <span class="slider-value" id="start_contrast_val">0</span>
-            </div>
-            <div class="slider-container">
-              <input type="range" id="end_contrast" min="-255" max="255" value="50" aria-labelledby="contrast-label" title="End contrast">
-              <span class="slider-value" id="end_contrast_val">50</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="param-row">
-          <label>Frames</label>
-          <input type="number" id="numFrames" min="2" max="300" value="30">
-        </div>
-
-        <div class="param-row">
-          <label>FPS</label>
-          <input type="number" id="fps" min="1" max="60" value="12">
-        </div>
-      </section>
-
-      <section class="control-group">
-        <h3>Display</h3>
-
-        <div class="param-row">
-          <label>Mode</label>
-          <div class="toggle-group">
-            <button type="button" id="modeTerminal" class="toggle-btn active">Terminal</button>
-            <button type="button" id="modePrint" class="toggle-btn">Print</button>
-          </div>
-        </div>
-
-        <div class="param-row">
-          <label>Background</label>
-          <input type="color" id="bgColor" value="#0a0a0a">
-        </div>
-
-        <div class="param-row">
-          <label>Foreground</label>
-          <input type="color" id="fgColor" value="#00ff00">
-        </div>
-      </section>
-
-      <section class="control-group">
-        <h3>Actions</h3>
-        <div class="button-row">
-          <button id="generateBtn">Generate</button>
-          <button id="playBtn">Play</button>
-        </div>
-        <div class="button-row">
-          <button id="exportGifBtn">Export GIF</button>
-          <button id="exportWebmBtn">Export WebM</button>
-          <button type="button" id="exportMp4Btn">Export MP4</button>
-        </div>
-        <div id="progressWrap"><progress id="renderProgress" value="0" max="100"></progress></div>
-      </section>
-
-    </aside>
-
-    <main class="main-content">
-      <div class="preview-area">
-        <canvas id="previewCanvas"></canvas>
-        <!-- Dual preview (start/end) -->
-        <div id="dualPreview" class="preview-container">
-          <div class="preview-panel">
-            <div class="preview-label">Start Frame</div>
-            <pre id="asciiOutputStart" class="ascii-preview"></pre>
-          </div>
-          <div class="preview-panel">
-            <div class="preview-label">End Frame</div>
-            <pre id="asciiOutputEnd" class="ascii-preview"></pre>
-          </div>
-        </div>
-        <!-- Single animation preview -->
-        <div id="animationPreview" class="preview-container single hidden">
-          <div class="preview-panel full">
-            <div class="preview-label">Animation Preview</div>
-            <pre id="asciiOutputAnim" class="ascii-preview"></pre>
-          </div>
-        </div>
+  <div class="shell">
+    <aside class="library" aria-label="library">
+      <div class="lib-head">
+        <h2>library</h2>
+        <div class="lib-actions"></div>
       </div>
-    </main>
+      <div class="lib-body"></div>
+    </aside>
+    <main class="rooms"></main>
   </div>
 
-  <!-- App scripts -->
-  <script type="module" src="./main.js"></script>
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
